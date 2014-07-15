@@ -11,6 +11,22 @@ accessing the mobi files is slow, since calibre-server does not seem to serve
 those files as static assets.
 
 
+Directory structure of my calibre library::
+
+    Some Author
+    |-- Some Title
+    |   |-- cover.jpg
+    |   |-- Some Title.mobi
+    |   |-- metadata.opf
+    |-- Some other Title
+        |-- cover.jpg
+        |-- metadata.opf
+        |-- Some other Title.mobi
+
+
+``metadata.opf`` is the xml, containing the metadata stuff.
+
+
 However, I thought there must be a faster solution. And because I configured
 solr_ yet, I decided to set this up and feed it with calibres metadata.
 
@@ -48,9 +64,11 @@ And it turns out... The index is quite fast, although solr is only running on
 the raspberry pi, as well.
 
 
-Like I mentioned already. This is far from being used in real life, but maybe will
-give you an idea who to use solr, combining this with a little python example
-(see python-workshop_).
+Like I mentioned already. This is far from being used in real life, but maybe
+will give you an idea who to use solr, combining this with a little python
+example. Walking the file system tree, parsing xml files, searching in the xml
+result set via xpath, talking to http api using requests_.
+(See python-workshop_).
 
 
 Next Steps...
@@ -66,4 +84,5 @@ Next Steps...
 
 .. _calibre: http://calibre-ebook.com/
 .. _solr: http://lucene.apache.org/solr/
+.. _requests: http://docs.python-requests.org/
 .. _python-workshop: https://github.com/chrigl/python-workshop
