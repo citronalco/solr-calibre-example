@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset=utf-8 />
+    <title>Ebook Search</title>
+    <link rel="stylesheet" type="text/css" media="screen" href="css/master.css" />
+    <script type="text/javascript" src="js/jquery-2.1.1.min.js"></script>
+    <script type="text/javascript">
+    $(function() {
+        var start = 0;
+        var num_docs = 0;
+        function get_ebooks(query, start_pos) {
+            if(query) {
+                $('#statusbar').removeClass('error').text('Start searching. Please be patient.');
+                $.getJSON('/ebooks/select?q=' + query + '&wt=json&start=' + start_pos, function(data) {
+                    if(data['responseHeader']['status'] != 0) {
+                        $('#statusbar').addClass('error').text('Unable to find results for: ' + query);
+                    } else {
+                        num_docs = data['response']['numFound'];
+                        start = data['response']['start'];
+                        console.log('num_docs: ' + num_docs);
+                        console.log('start: ' + start);
+                        if(num_docs > start+10) {
+                            $('#next').show();
+                        } else {
+                            $('#next').hide();
+                        }
+                        if(start > 0) {
+                            $('#prev').show();
+                        } else {
+                            $('#prev').hide();
+                        }
+                        var end = start + 10;
+                        if(end > num_docs) {
+                            end = num_docs;
+                        }
+                        $('#statusbar').removeClass('error').text('Showing ' + start + ' to ' + end + ' of ' + num_docs + '.');
+                        // clear result set
+                        $('#content').text('');
+                        var cnt=0;
+                        $.each(data['response']['docs'], function(key, val) {
+                            var url_prefix = '/books/' + val['path']
+                            var url = url_prefix + '/' + val['mobi']
+                            var lnk = $('<a href="' + url + '">' + val['title'] + '</a>');
+                            var div = $('<div class="bookentry" id="book-' + cnt++ +'" />');
+                            var hdr = $('<div class="bookheader"/>');
+                            var title = $('<div class="booktitle"/>');
+                            var author = $('<div class="bookauthor">' + val['author'] + '</div>');
+                            var desc = $('<div class="bookdesc"/>');
+                            var footer = $('<div class="bookfooter"/>');
+                            var button = $('<a class="button" href="' + url + '">Download</a>');
+                            var clr = $('<div style="clear: both" />');
+                            var show_next_book = num_docs - start;
+                            if(show_next_book > cnt && cnt < 10) {
+                                var next = $('<div class="booknext"><a href="#book-' + cnt + '"><img src="img/next_book.png" alt="next book" /></a></div>');
+                            }
+                            if(cnt > 1) {
+                                var prev_cnt = cnt - 2;
+                                var prev = $('<div class="bookprev"><a href="#book-' + prev_cnt + '"><img src="img/prev_book.png" alt="prev book" /></a></div>');
+                            }
+                            footer.append(button);
+                            title.append(author);
+                            title.append(lnk);
+                            if(prev) {
+                                hdr.append(prev);
+                            }
+                            hdr.append(title);
+                            if (val['description']) {
+                                desc.append(val['description']);
+                            } else {
+                                desc.text('No description available');
+                            }
+                            div.append(hdr);
+                            if (val['cover']) {
+                                var img_url = url_prefix + '/' + val['cover'];
+                                var cover = $('<div class="bookcover"><a href="' + url + '"><img src="' + img_url + '" alt="cover" /></a></div>');
+                                hdr.append(cover);
+                            }
+                            hdr.append(clr);
+                            if(next) {
+                                hdr.append(next);
+                            }
+                            div.append(desc);
+                            div.append(footer);
+                            $('#content').append(div);
+                        });
+                    }
+                    $('#footer').show();
+                }).fail(function() {
+                    $('#statusbar').addClass('error').text('Unable to reach database');
+                });
+            }
+        }
+        function get_query() {
+            var query = $('input#search_q').val();
+            if(query) {
+                query = '*' + query + '*';
+            } else {
+                query = '*';
+            }
+            var lang = $('#language input:checked');
+            var author = $('input#search_author');
+            if(lang && lang.val()) {
+                var lang_query = ' AND language:' + lang.val();
+            }
+            if(author && author.val()) {
+                var author_query = ' AND author:*' + author.val() + '*';
+            }
+            if(author_query || lang_query) {
+                query = '(' + query;
+            }
+            if(author_query) {
+                query = query + author_query;
+            }
+            if(lang_query) {
+                query = query + lang_query;
+            }
+            if(author_query || lang_query) {
+                query = query + ')';
+            }
+            return query
+        }
+        $('#next').click(function(ev) {
+            var query = get_query();
+            get_ebooks(query, start_pos=start+10);
+        });
+        $('#prev').click(function(ev) {
+            var query = get_query();
+            get_ebooks(query, start_pos=start-10);
+        });
+        $('#searchform').submit(function(ev) {
+            var query = get_query();
+            get_ebooks(query, start_pos=0);
+            return false;
+        });
+    });
+    </script>
+</head>
+<body>
+
+<form id="searchform" action="/ebooks/select" method="post">
+<input type="hidden" name="wt" value="json" />
+<div id="searchbar">
+    <div id="search">
+        <label for="q">Title</label>
+        <input type="text" name="q" id="search_q" />
+    </div>
+    <div id="author">
+        <label for="author">Author</label>
+        <input type="text" name="author" id="search_author" />
+    </div>
+    <div id="language">
+        <label for="lang">Language</label>
+        <input type="radio" name="lang" id="search_lang_0" value="" checked />Both
+        <input type="radio" name="lang" id="search_lang_1" value="deu" />German
+        <input type="radio" name="lang" id="search_lang_2" value="eng" />English
+    </div>
+    <div id="searchbutton">
+        <input type="submit" value="Search" />
+    </div>
+    <div style="clear: both"></div>
+</div>
+</form>
+
+<div id="statusbar">
+</div>
+
+<div id="content">
+</div>
+
+<div id="footer" style="display: none">
+    <div id="toplnk">
+        <a href="#searchbar" class="button"><img src="img/top.png" alt="top" /></a>
+    </div>
+    <div id="pager">
+        <a href="#statusbar" class="button" id="prev" style="display:none"><img src="img/prev.png" alt="prev" /></a>
+        <a href="#statusbar" class="button" id="next" style="display:none"><img src="img/next.png" alt="next" /></a>
+    </div>
+    <div style="clear: both">
+    </div>
+</div>
+
+<div id="spacefooter">
+</div>
+
+</body>
+</html>

@@ -71,18 +71,54 @@ result set via xpath, talking to http api using requests_.
 (See python-workshop_).
 
 
-Next Steps...
-`````````````
+Little webui
+````````````
 
-... that will very likely never happen ;)
+I just added a little webui based on jquery_. This only queries solr for json
+results and show author, title, cover and description.
+
+As a requirement, your library must be at::
+
+    $DOCUMENTROOT/books
 
 
-* Hacking a little web UI for querying solr
-* Must be mobile compatible to look nice on Kindle
-* Serve mobi files as static assets
+However, your DOCUMENTROOT should look like this::
+
+    .
+    |-- books -> /YOUR/EBOOK/LIBRARY
+    |-- css
+    |   |-- master.css
+    |-- img
+    |   |-- next_book.png
+    |   |-- next.png
+    |   |-- prev_book.png
+    |   |-- prev.png
+    |   |-- top.png
+    |-- index.html
+    |-- js
+        |-- jquery-2.1.1.min.js
+
+
+You have to configure your webserver to pass requests to /ebooks directly to
+solr. This is how to do it with nginx_::    
+
+    location /ebooks {
+        proxy_pass http://localhost:8983/ebooks;
+    }
+
+
+This is what it looks like.
+
+.. image:: screen.png
+
+
+Unfortunately, the buttons with internal references does not work on the
+Kindle :/
 
 
 .. _calibre: http://calibre-ebook.com/
 .. _solr: http://lucene.apache.org/solr/
 .. _requests: http://docs.python-requests.org/
 .. _python-workshop: https://github.com/chrigl/python-workshop
+.. _jquery: http://jquery.com/
+.. _nginx: http://nginx.org/
