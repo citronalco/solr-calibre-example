@@ -1,0 +1,160 @@
+body {
+    margin: 0px;
+    font-family: sans-serif;
+}
+
+/* searchcontainer contains the searchfields and the querybar */
+#searchcontainer {
+    background: none repeat scroll 0 0 #036185;
+    color: white;
+    position: fixed;
+    width: 100%;
+    z-index: 999;
+}
+#searchcontainer label {
+    display: inline-block;
+    width: 100px;
+    text-align: right;
+}
+#searchcontainer input[type=text] {
+    width: 350px;
+}
+
+
+/* search fields */
+#searchfields {
+    padding: 5px;
+}
+#searchfields div {
+    display: inline-block;
+    min-width: 500px;
+}
+.searchfieldsoverride input[type=text] {
+    background-color: lightgrey;
+}
+
+
+/* SOLR query bar */
+#querybar {
+    padding: 5px;
+}
+#querybar div {
+    display: inline-block;
+}
+#status {
+    float: right;
+    font-weight: bold;
+    padding-left: 1em;
+    padding-right: 1em;
+    line-height: 2;
+}
+#status.error {
+    background-color: red;
+}
+
+
+/* booklist is a container for items of the class bookentry */
+#booklist {
+    padding-top: 3em;
+}
+
+.bookentry {
+    display: grid;
+    grid-template-columns: 200px auto;
+    grid-gap: 20px;
+    border-bottom: 5px solid lightgrey;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.bookcover {
+    grid-column: 1;
+}
+.bookcover img {
+    width: 100%;
+    padding-top: 5px;
+    height: auto;
+}
+
+.bookdata {
+    grid-column: 2;
+}
+.bookdata div {
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+.bookdata a {
+    text-decoration: none;
+}
+.bookdata ul {
+    display: inline-block;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.bookdata li {
+    display: inline-block;
+    margin-right: 10px;
+}
+.bookdata .download a {
+    display: inline-block;
+    background-color: #408ccb;
+    color: white;
+    font-weight: bold;
+    border: 8px solid #408ccb;
+    border-radius: 3px;
+}
+.bookdata .booktitle {
+    font-size: 180%;
+}
+.bookdata .bookauthors li {
+    color: #43b49e;
+    cursor: pointer;
+}
+.bookdata .bookdate li {
+    color: #43b49e;
+    cursor: pointer;
+}
+.bookdata .bookseries span {
+    color: #43b49e;
+    cursor: pointer;
+}
+
+.bookdata .booklanguages li {
+    background-color: #9a9a9a;
+    color: white;
+    font-size: 85%;
+    border: 3px solid #9a9a9a;
+    border-radius: 3px;
+}
+.bookdata .booklanguages li {
+    color: white;
+    cursor: pointer;
+}
+
+.bookdata .bookidentifiers li {
+    background-color: #57b555;
+    color: white;
+    font-size: 85%;
+    border: 3px solid #57b555;
+    border-radius: 3px;
+}
+
+.bookdata .booksubjects li {
+    background-color: #5bc1df;
+    color: white;
+    font-size: 85%;
+    border: 3px solid #5bc1df;
+    border-radius: 3px;
+}
+.bookdata .booksubjects li {
+    color: white;
+    cursor: pointer;
+
+}
+
+.bookdata .bookdescription h1 {
+    font-size: 120%;
+}

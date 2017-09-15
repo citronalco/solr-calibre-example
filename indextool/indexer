@@ -1,0 +1,168 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import xml.etree.ElementTree as etree
+import requests
+import json
+import os
+
+from bs4 import BeautifulSoup
+
+from dateutil.parser import parse
+from dateutil.tz import *
+
+BASEDIR='/data/my-calibre-library/'
+
+namespaces = {'dc': 'http://purl.org/dc/elements/1.1/',
+              'opf': 'http://www.idpf.org/2007/opf',}
+
+
+def get_ebook_file(files):
+    """returns ebook file, if there is one in the file list"""
+    for f in files:
+        if f.endswith(('.epub','.pdf')):
+            return f
+    return ''
+
+
+def get_metadata(basedir):
+    """walks basedir and yields relevant metadata, path, cover and ebook file"""
+    for root, dirs, files in os.walk(basedir):
+        if 'metadata.opf' in files:
+            path = '/'.join(root.split('/')[-2:])
+            filename = get_ebook_file(files)
+	    extension = os.path.splitext(filename)[1].lower()[1:]
+            cover = ''
+            if 'cover.jpg' in files:
+                cover = 'cover.jpg'
+            yield ('%s/metadata.opf' % root, path, cover, filename, extension)
+
+
+def parse_metadata(metadata):
+    """parse metadata and returns fields"""
+    x = etree.parse(metadata)
+
+    root = x.getroot()
+
+    def get_field(matcher):
+	matches = []
+        for match in root.findall('./opf:metadata/dc:%s' % matcher, namespaces=namespaces):
+	    matches.append(match.text)
+        return matches
+
+    def get_meta_field(matcher):
+	matches = []
+        for match in root.findall("./opf:metadata/opf:meta[@name='%s']" % matcher, namespaces=namespaces):
+	    matches.append(match.get("content"))
+	return matches
+
+    def get_identifiers():
+	matches = []
+        for match in root.findall("./opf:metadata/dc:identifier[@opf:scheme]", namespaces=namespaces):
+	    identifier_type = match.get('{http://www.idpf.org/2007/opf}scheme')
+	    if identifier_type == 'calibre':
+		continue
+	    matches.append(identifier_type + ':' + match.text)
+        return matches
+
+
+    calibre_id = get_field('identifier[@id="calibre_id"]')
+    if not calibre_id:
+        return None
+
+    title = get_field('title')
+    author = get_field('creator')
+    series = get_meta_field('calibre:series')
+    series_index = get_meta_field('calibre:series_index')
+    subject = get_field('subject')
+
+    # description may contain html, we remove that
+    description = get_field('description')
+    if description:
+	soup = BeautifulSoup(description[0],"lxml")
+	for i in soup (['script','style']):	# remove script and style
+	    i.extract()
+	description = soup.get_text()	# get text
+	lines = (line.strip() for line in description.splitlines())	# break into lines and remove leading and trailing space on each
+	chunks = (phrase.strip() for line in lines for phrase in line.split("  "))	# break multi-headlines into a line each
+	description = '\n'.join(chunk for chunk in chunks if chunk)	# drop blank lines
+
+    identifier = get_identifiers()
+    language = get_field('language')
+    date = get_field('date')
+    if (date[0]):
+	date="%sZ" % parse(date[0]).astimezone(tzutc()).isoformat()
+
+    publisher = get_field('publisher')
+    author_sort = get_meta_field('calibre:author_sort')
+    title_sort = get_meta_field('calibre:title_sort')
+
+    return {'id': calibre_id,
+
+            'title': title,
+            'title_output': title,
+
+            'author': author,
+            'author_facet': author,
+
+            'series': series,
+            'series_index': series_index,
+
+            'subject': subject,
+            'subject_facet': subject,
+
+            'abstract': description,
+            'abstract_output': description,
+
+            'identifier': identifier,
+
+            'language': language,
+
+            'date' : date,
+            'year': date[:4],
+
+    	    'publisher': publisher,
+
+    	    'author_sort': author_sort,
+    	    'title_sort': title_sort,
+           }
+
+
+def update_entry(ebook_data):
+    """updates the solr entry"""
+    solr_data = {'add': {
+                    'doc': ebook_data,
+                    },
+                }
+
+    headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+    requests.post('http://localhost:8080/solr/ebooks/update/json',
+                  data=json.dumps(solr_data), headers=headers)
+
+
+def reload_core():
+    """tells solr to reload the core"""
+    payload = { 'action': 'RELOAD', 'core': 'ebooks'}
+    requests.get('http://localhost:8080/solr/admin/cores', params=payload)
+    # curl "http://localhost:8080/solr/admin/cores?action=RELOAD&core=ebooks"
+
+
+if __name__ == '__main__':
+    for idx, metadata in enumerate(get_metadata(BASEDIR)):
+        metadata_file, path, cover, filename, extension = metadata
+        ebook_data = parse_metadata(metadata_file)
+        if not ebook_data:
+            print("Unable to find metadata in %s." % metadata_file)
+            continue
+        ebook_data.update({'path': path,
+                           'coverfile': cover,
+                           'filename': filename,
+                           'filetype': extension,
+                          })
+        update_entry(ebook_data)
+        if idx > 0 and idx % 100 == 0:
+            print("Added %s entries" % idx)
+
+    print('Finally reloading solr')
+    reload_core()
+    print('Done')

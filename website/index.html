@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+    <head>
+	<meta charset=utf-8 />
+	<title>Ebook Suche</title>
+	<link rel="stylesheet" type="text/css" media="screen" href="css/master.css" />
+	<script type="text/javascript" src="js/jquery-3.2.1.min.js"></script>
+	<script type="text/javascript" src="js/mustache.min.js"></script>
+    </head>
+
+    <body>
+	<!-- Template for a single book -->
+	<script type="text/template" id="template-bookitem">
+	    <div class="bookentry" id="book-{{{num}}}">
+	    <div class="bookcover">
+		<a href="{{{bookurl}}}">
+		<img src="{{{coverurl}}}" alt="Buchcover"></a>
+	    </div>
+
+	    <div class="bookdata">
+		<div class="download">
+		    <a href="{{{url}}}">
+			Download {{format}}
+		    </a>
+		</div>
+		<div class="booktitle">
+		    <ul>{{{title}}}</ul>
+		</div>
+		<div class="bookauthors">
+		    <ul>{{{authors}}}</ul>
+		</div>
+		<div class="bookseries">
+		    <ul>{{{series}}}</ul>
+		</div>
+		<div class="booklanguages">
+		    Sprache:
+		    <ul>{{{languages}}}</ul>
+		</div>
+		<div class="bookidentifiers">
+		    Kennungen:
+		    <ul>{{{identifiers}}}</ul>
+		</div>
+		<div class="booksubjects">
+		    Schlagwörter:
+		    <ul>{{{subjects}}}</ul>
+		</div>
+		<div class="bookpublisher">
+		    Herausgeber:
+		    <ul>{{publisher}}</ul>
+		</div>
+		<div class="bookdate">
+		    Herausgabedatum:
+		    <ul><li>{{date}}</li></ul>
+		</div>
+		<div class="bookdescription">
+		    <h1>Beschreibung</h1>
+		    {{description}}
+		</div>
+	    </div>
+	</script>
+
+	<script type="text/javascript">
+	    // Path to calibre library
+	    var calibre_url_prefix = '/ebooksearch/calibrelibrary/';
+	    // Path to solr
+	    var solr_url_prefix = '/ebooksearch/solr/select/'
+
+	    // retrieve max. NUM results at once
+	    var query_limit = 5;
+
+	    $(function() {
+		var start = 0;
+		var num_docs = 0;	// total results
+		var cnt = 0;	// counter for bookitems
+		var query = '';
+
+		var scroll_load_finished = true;	// Flag to avoid multiple AJAX calls at once when scrolling to bottom
+
+		$(window).scroll(function() {
+		    if (scroll_load_finished == true && $(window).scrollTop() >= $(document).height() - $(window).height() - 300) {
+			if (num_docs > start_pos+query_limit) {
+			    scroll_load_finished = false;
+			    start_pos += query_limit;
+			    get_ebooks(start_pos);
+			}
+		    }
+		});
+
+		function get_ebooks(start_pos) {
+		    if(query) {
+			$('#status').removeClass('error').text('Suche läuft...');
+			$.getJSON(solr_url_prefix + '/?q=' + encodeURIComponent(query) + '&wt=json&rows=' + query_limit + '&start=' + start_pos, function(data) {
+			    if (data['responseHeader']['status'] != 0) {
+				$('#status').addClass('error').text('Keine Treffer');
+			    } else {
+				num_docs = data['response']['numFound'];
+				start = data['response']['start'];
+				var end = start + query_limit;
+				if (end > num_docs) {
+				    end = num_docs;
+				}
+
+				$('#status').removeClass('error').text(num_docs + ' Treffer');
+
+				// clear result set on new search
+				if (start_pos == 0) {
+				    cnt = 0;
+				    $('#booklist').text('');
+				    $('body,html').scrollTop(0);
+				}
+
+				var template = $('#template-bookitem').html();	// load template
+				$.each(data['response']['docs'], function(key, val) {	// fill template for each book
+				    // Book URL
+				    var bookurl = calibre_url_prefix + '/' + val['path'] + '/' +val['filename']
+
+				    // Cover URL
+				    if (val['coverfile']) {
+					coverurl = calibre_url_prefix + '/' + val['path'] + '/' + val['coverfile'];
+				    }
+
+				    // Book Title
+				    var booktitle = val['title_output'];
+
+				    // Book Format
+				    var bookformat = val['filetype'].toUpperCase();
+
+				    // Book Author
+				    var bookauthors='';
+				    if (val['author']) {
+					for (let i of val['author']) {
+					    bookauthors += '<li>' + htmlEncode(i) + '</li>';
+					}
+				    }
+
+				    // Book Subjects
+				    var booksubjects='';
+				    if (val['subject']) {
+					for (let i of val['subject']) {
+					    booksubjects += '<li>' + htmlEncode(i) + '</li>';
+					}
+				    }
+
+				    // Book Identifiers
+				    var bookidentifiers='';
+				    if (val['identifier']) {
+					for (let i of val['identifier']) {
+					    if (i.substr(0,5)=='uuid:') { continue; }	// skip calibre uuid
+					    bookidentifiers += '<li>' + htmlEncode(i) + '</li>';
+					}
+				    }
+
+				    // Book Languages
+				    var booklanguages='';
+				    if (val['language']) {
+					for (let i of val['language']) {
+					    booklanguages += '<li>' + htmlEncode(i) + '</li>';
+					}
+				    }
+
+				    // Book Series
+				    var bookseries='';
+				    if (val['series']) {
+					bookseries = '<span>' + htmlEncode(val['series']) + '</span>';
+					if (val['series_index']) {
+					    bookseries = 'Band ' + htmlEncode(val['series_index']) + ' von ' + bookseries;
+					}
+				    }
+
+				    // Book Description
+				    var bookdescription='Keine Beschreibung verfügbar';
+				    if (val['abstract_output']) {
+					bookdescription=val['abstract_output'];
+				    }
+
+				    // Date
+				    var bookdate = val['year'];
+
+				    // Publisher
+				    var bookpublisher = val['publisher'];
+
+				    // stick everything in a array for Mustache to fill the Template
+				    var bookdata = {
+					num: cnt++,
+					url: bookurl,
+					format: bookformat,
+					coverurl: coverurl,
+					title: booktitle,
+					authors: bookauthors,
+					subjects: booksubjects,
+					identifiers: bookidentifiers,
+					series: bookseries,
+					date: bookdate,
+					publisher: bookpublisher,
+					languages: booklanguages,
+					description: bookdescription
+				    };
+				    var bookdetails = Mustache.render(template,bookdata);	// fill template with values
+				    $('#booklist').append(bookdetails).children(':last').hide().fadeIn(1000);	// append book to booklist
+
+				    scroll_load_finished = true;
+				});
+			    }
+			}).fail(function() {
+			    $('#status').addClass('error').text('Fehler');
+			});
+		    }
+		}
+
+		$('#searchcontainer').mouseenter(function(){
+		    $('#searchfields').stop(false,true).slideDown('fast');
+		});
+		$('#searchcontainer').mouseleave(function(){
+		    if (num_docs > 0) {
+			$('#searchfields').stop(false,true).slideUp('fast');
+		    }
+		});
+
+		// construct solr query
+		function build_query() {
+		    var form_params = {
+			'title' : $('input#search_title').val(),
+			'author' : $('input#search_author').val(),
+			'series' : $('input#search_series').val(),
+			'text' : $('input#search_text').val(),
+			'year' : $('input#search_year').val(),
+			'language' : $('#language input:checked').val()
+		    }
+		    var queryparts = new Array;
+		    for (var key in form_params) {
+			if (form_params[key]) {
+			    queryparts.push( '(' + key + ':' + form_params[key] + ')' );
+			}
+		    }
+		    query = queryparts.join(' AND ');
+		    return query
+		};
+
+		// clear button
+		$('#clearbutton').on("click",function() {
+		    reset_form();
+		});
+
+		// mark search form as irrelevant if solr query gets changed
+		$('#solr_query').bind('change keyup',function() {
+		    if ($('input#solr_query').val() != build_query()) {
+			$('#searchfields').addClass('searchfieldsoverride');
+		    }
+		    else {
+			$('#searchfields').removeClass('searchfieldsoverride');
+		    }
+		});
+
+		// update solr query if search form values change
+		$('#searchfields input:text').bind('change keyup',function() {
+		    $('input#solr_query').val(build_query()).change();
+		});
+		$('#searchfields input[type=radio]').bind('change',function() {
+		    $('input#solr_query').val(build_query()).change();
+		});
+
+		// search button
+		$('#searchform').submit(function(ev) {
+		    query = $('input#solr_query').val();
+		    get_ebooks(start_pos=0);
+		    return false;
+		});
+
+		// click on book's author name
+		$(document).on("click",".bookauthors ul li",function() {
+		    var value=$(this).text();
+		    reset_form();
+		    $('input#search_author').val('"'+value+'"').change();
+		    query = build_query();
+		    get_ebooks(start_pos=0);
+		});
+
+		// click on book's language
+		$(document).on("click",".booklanguages ul li",function() {
+		    var value=$(this).text();
+		    $('input[name="lang"][value='+value+']').prop('checked',true).change();
+		    query = build_query();
+		    get_ebooks(start_pos=0);
+		});
+
+		// click on book's publishing date
+		$(document).on("click",".bookdate ul li",function() {
+		    var value=$(this).text();
+		    $('input#search_year').val(value).change();
+		    query = build_query();
+		    get_ebooks(start_pos=0);
+		});
+
+		// click on book's series
+		$(document).on("click",".bookseries span",function() {
+		    var value=$(this).text();
+		    reset_form();
+		    $('input#search_series').val('"'+value+'"').change();
+		    query = build_query();
+		    get_ebooks(start_pos=0);
+		});
+	    });
+
+	    // clear form data
+	    function reset_form() {
+		$("#searchform").find('input:text, input:password, input:file, select, textarea').val('');
+		$("#searchform").find('input:radio, input:checkbox').removeAttr('checked').removeAttr('selected');
+	    }
+
+	    // html encode text
+	    function htmlEncode(value) {
+		return $('<div/>').text(value).html(); 
+	    }
+	</script>
+
+	<div id="searchcontainer">
+	    <form id="searchform" method="post">
+		<div id="querybar">
+		    <div id="querystring">
+			<label for="solr_query">SOLR Query</label>
+			<input type="text" name="solr_query" id="solr_query" />
+		    </div>
+		    <div id="buttons">
+			<input type="submit" id="searchbutton" value="Suchen" />
+			<input type="button" id="clearbutton" value="Zurücksetzen" />
+		    </div>
+		    <div id="status"></div>
+		</div>
+
+
+		<div id="searchfields">
+		    <div>
+			<label for="search_title">Titel</label>
+			<input type="text" name="title" id="search_title" />
+		    </div>
+		    <div>
+			<label for="search_author">Autor</label>
+			<input type="text" name="author" id="search_author" />
+		    </div>
+		    <div>
+			<label for="search_series">Serie</label>
+			<input type="text" name="series" id="search_series" />
+		    </div>
+		    <div>
+			<label for="search_year">Jahr</label>
+			<input type="text" name="year" id="search_year" />
+		    </div>
+		    <div>
+			<label for="search_text">Irgendwo</label>
+			<input type="text" name="text" id="search_text" />
+		    </div>
+		    <div id="language">
+			<label for="search_lang_0">Sprache</label>
+			<input type="radio" name="lang" id="search_lang_0" value="" checked />Beides
+			<input type="radio" name="lang" id="search_lang_1" value="deu" />Deutsch
+			<input type="radio" name="lang" id="search_lang_2" value="eng" />Englisch
+		    </div>
+		</div>
+	    </form>
+	</div>
+	<div id="booklist"></div>
+    </body>
+</html>

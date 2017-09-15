@@ -16,24 +16,11 @@
  limitations under the License.
 -->
 
-<!--
- All (relative) paths are relative to the installation path
-  
-  persistent: Save changes made via the API to this file
-  sharedLib: path to a lib directory that will be shared across all cores
+<!-- If this file is found in the config directory, it will only be
+     loaded once at startup.  If it is found in Solr's data
+     directory, it will be re-loaded every commit.
 -->
-<solr persistent="false">
 
-  <!--
-  adminPath: RequestHandler path to manage cores.  
-    If 'null' (or absent), cores will not be manageable via request handler
-  -->
-  <cores adminPath="/admin/cores" host="${host:}" hostPort="${jetty.port:8983}" hostContext="${hostContext:solr}">
-    <core name="ebooks" instanceDir="/media/data/ebooks/solr" />
-    
-    <shardHandlerFactory name="shardHandlerFactory" class="HttpShardHandlerFactory">
-      <str name="urlScheme">${urlScheme:}</str>
-    </shardHandlerFactory>
-  </cores>
-        
-</solr>
+<elevate>
+
+</elevate>
