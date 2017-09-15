@@ -26,11 +26,10 @@ Debian 9 comes with solr 3.6.2, if you're using another version same ports in sc
 1. Create a directory `/var/lib/solr/ebooksearch/conf/ and put the content of the "solr" directory into.
 1. `chown -R tomcat8:tomcat8 /var/lib/solr/ebooksearch`
 1. Edit /etc/solr/solr.xml and add `<core name="ebooksearch" instanceDir="/var/lib/solr/ebooksearch" />` between `<core>` and `</core>`
-1. Now map solr/Tomcat's search interface (''http://127.0.0.1:8080/solr/ebooksearch/select'') to /ebooksearch/solr, e.g. by using Apache's mod_proxy module:
-    <Location /ebooksearch/solr/select>
+1. Now map solr/Tomcat's search interface (''http://127.0.0.1:8080/solr/ebooksearch/select'') to /ebooksearch/solr, e.g. by using Apache's mod_proxy module:```<Location /ebooksearch/solr/select>
 	ProxyPass http://127.0.0.1:8080/solr/ebooksearch/select
 	ProxyPassReverse /ebooksearch/solr/select
-    </Location>
+    </Location>```
 1. Start tomcat8: `systemctl start tomcat8`
 1. Edit the website's index.html and set `calibre_url_prefix` to the webserver subdirectory from above (e.g. /ebooksearch/calibrelibrary/) and `solr_url_prefix` to the mapped solr location (e.g. /ebooksearch/solr/select/)
 1. Edit the indexer from the "indextool" directory and set the ``BASEDIR`` to point to your calibre library directory on the file system.
