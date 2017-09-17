@@ -40,9 +40,9 @@
 		    Kennungen:
 		    <ul>{{{identifiers}}}</ul>
 		</div>
-		<div class="booksubjects">
+		<div class="booktags">
 		    Schlagwörter:
-		    <ul>{{{subjects}}}</ul>
+		    <ul>{{{tags}}}</ul>
 		</div>
 		<div class="bookpublisher">
 		    Herausgeber:
@@ -87,7 +87,7 @@
 		});
 
 		function get_ebooks(start_pos) {
-		    if(query) {
+		    if (query) {
 			$('#status').removeClass('error').text('Suche läuft...');
 			$.getJSON(solr_url_prefix + '/?q=' + encodeURIComponent(query) + '&wt=json&rows=' + query_limit + '&start=' + start_pos, function(data) {
 			    if (data['responseHeader']['status'] != 0) {
@@ -110,6 +110,7 @@
 				}
 
 				var template = $('#template-bookitem').html();	// load template
+
 				$.each(data['response']['docs'], function(key, val) {	// fill template for each book
 				    // Book URL
 				    var bookurl = calibre_url_prefix + '/' + val['path'] + '/' +val['filename']
@@ -128,33 +129,32 @@
 				    // Book Author
 				    var bookauthors='';
 				    if (val['author']) {
-					for (let i of val['author']) {
-					    bookauthors += '<li>' + htmlEncode(i) + '</li>';
+					for (var i=0;i<val['author'].length;i++) {
+					    bookauthors += '<li>' + htmlEncode(val['author'][i]) + '</li>';
 					}
 				    }
 
-				    // Book Subjects
-				    var booksubjects='';
-				    if (val['subject']) {
-					for (let i of val['subject']) {
-					    booksubjects += '<li>' + htmlEncode(i) + '</li>';
+				    // Book Tags
+				    var booktags='';
+				    if (val['tag']) {
+					for (var i=0;i<val['tag'].length;i++) {
+					    booktags += '<li>' + htmlEncode(val['tag'][i]) + '</li>';
 					}
 				    }
 
 				    // Book Identifiers
 				    var bookidentifiers='';
 				    if (val['identifier']) {
-					for (let i of val['identifier']) {
-					    if (i.substr(0,5)=='uuid:') { continue; }	// skip calibre uuid
-					    bookidentifiers += '<li>' + htmlEncode(i) + '</li>';
+					for (var i=0;i<val['identifier'].length;i++) {
+					    if (val['identifier'][i].substr(0,5)=='uuid:') { continue; }	// skip calibre uuid
+					    bookidentifiers += '<li>' + htmlEncode(val['identifier'][i]) + '</li>';
 					}
 				    }
-
 				    // Book Languages
 				    var booklanguages='';
 				    if (val['language']) {
-					for (let i of val['language']) {
-					    booklanguages += '<li>' + htmlEncode(i) + '</li>';
+					for (var i=0;i<val['language'].length;i++) {
+					    booklanguages += '<li>' + htmlEncode(val['language'][i]) + '</li>';
 					}
 				    }
 
@@ -187,7 +187,7 @@
 					coverurl: coverurl,
 					title: booktitle,
 					authors: bookauthors,
-					subjects: booksubjects,
+					tags: booktags,
 					identifiers: bookidentifiers,
 					series: bookseries,
 					date: bookdate,
@@ -198,12 +198,13 @@
 				    var bookdetails = Mustache.render(template,bookdata);	// fill template with values
 				    $('#booklist').append(bookdetails).children(':last').hide().fadeIn(1000);	// append book to booklist
 
-				    scroll_load_finished = true;
 				});
+
 			    }
 			}).fail(function() {
 			    $('#status').addClass('error').text('Fehler');
 			});
+			scroll_load_finished = true;
 		    }
 		}
 
@@ -260,7 +261,7 @@
 		});
 
 		// search button
-		$('#searchform').submit(function(ev) {
+		$('#searchform').on("submit",function(e) {
 		    query = $('input#solr_query').val();
 		    get_ebooks(start_pos=0);
 		    return false;
@@ -314,7 +315,7 @@
 	</script>
 
 	<div id="searchcontainer">
-	    <form id="searchform" method="post">
+	    <form id="searchform">
 		<div id="querybar">
 		    <div id="querystring">
 			<label for="solr_query">SOLR Query</label>

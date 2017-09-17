@@ -225,8 +225,8 @@
     <field name="series"	type="text"	indexed="true"	stored="true"/>
     <field name="series_index"	type="string"	indexed="true"	stored="true" />
 
-    <field name="subject"	type="text"	indexed="true"	stored="true"	multiValued="true" />
-    <field name="subject_facet"	type="string"	indexed="true"	stored="false"	multiValued="true" />
+    <field name="tag"		type="text"	indexed="true"	stored="true"	multiValued="true" />
+    <field name="tag_facet"	type="string"	indexed="true"	stored="false"	multiValued="true" />
 
     <field name="abstract"	type="text"	indexed="true"	stored="false"	multiValued="false"	omitNorms="false" />
     <field name="abstract_output" type="text"	indexed="false"	stored="true" />
@@ -277,7 +277,7 @@
    <copyField source="series" dest="text" />
    <copyField source="series_index" dest="text" />
    <copyField source="author" dest="text" />
-   <copyField source="subject" dest="text" />
+   <copyField source="tag" dest="text" />
    <copyField source="publisher" dest="text" />
    <copyField source="identifier" dest="text" />
    <copyField source="filetype" dest="text" />

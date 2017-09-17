@@ -108,8 +108,8 @@ def parse_metadata(metadata):
             'series': series,
             'series_index': series_index,
 
-            'subject': subject,
-            'subject_facet': subject,
+            'tag': subject,
+            'tag_facet': subject,
 
             'abstract': description,
             'abstract_output': description,
