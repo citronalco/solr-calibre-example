@@ -2,6 +2,7 @@
 <html>
     <head>
 	<meta charset=utf-8 />
+	<meta name="viewport" content="width=device-width" />
 	<title>Ebook Suche</title>
 	<link rel="stylesheet" type="text/css" media="screen" href="css/master.css" />
 	<script type="text/javascript" src="js/jquery-3.2.1.min.js"></script>
@@ -75,6 +76,7 @@
 		var query = '';
 
 		var scroll_load_finished = true;	// Flag to avoid multiple AJAX calls at once when scrolling to bottom
+		//$('#searchfields').stop(false,true).slideDown('fast');	// start with searchfield visible
 
 		$(window).scroll(function() {
 		    if (scroll_load_finished == true && $(window).scrollTop() >= $(document).height() - $(window).height() - 300) {
@@ -92,7 +94,8 @@
 			$.getJSON(solr_url_prefix + '/?q=' + encodeURIComponent(query) + '&wt=json&rows=' + query_limit + '&start=' + start_pos, function(data) {
 			    if (data['responseHeader']['status'] != 0) {
 				$('#status').addClass('error').text('Keine Treffer');
-			    } else {
+			    }
+			     else {
 				num_docs = data['response']['numFound'];
 				start = data['response']['start'];
 				var end = start + query_limit;
@@ -150,6 +153,7 @@
 					    bookidentifiers += '<li>' + htmlEncode(val['identifier'][i]) + '</li>';
 					}
 				    }
+
 				    // Book Languages
 				    var booklanguages='';
 				    if (val['language']) {
@@ -207,7 +211,8 @@
 			scroll_load_finished = true;
 		    }
 		}
-
+/* this makes the page unusable on smaller devices: */
+/*
 		$('#searchcontainer').mouseenter(function(){
 		    $('#searchfields').stop(false,true).slideDown('fast');
 		});
@@ -216,21 +221,28 @@
 			$('#searchfields').stop(false,true).slideUp('fast');
 		    }
 		});
+*/
+/*
+		$('#searchcontainer:not("input[type=text]")').on("click",function(){
+		    $('#searchfields').stop(false,true).slideToggle('fast');
+		});
+*/
 
 		// construct solr query
 		function build_query() {
 		    var form_params = {
-			'title' : $('input#search_title').val(),
-			'author' : $('input#search_author').val(),
-			'series' : $('input#search_series').val(),
-			'text' : $('input#search_text').val(),
-			'year' : $('input#search_year').val(),
-			'language' : $('#language input:checked').val()
+			'title' : $('input#search_title').filter(':visible').val(),
+			'author' : $('input#search_author').filter(':visible').val(),
+			'series' : $('input#search_series').filter(':visible').val(),
+			'text' : $('input#search_text').filter(':visible').val(),
+			'year' : $('input#search_year').filter(':visible').val(),
+			'tag' : $('input#search_tag').filter(':visible').val(),
+			'language' : $('#language input:checked').filter(':visible').val()
 		    }
 		    var queryparts = new Array;
 		    for (var key in form_params) {
 			if (form_params[key]) {
-			    queryparts.push( '(' + key + ':' + form_params[key] + ')' );
+			    queryparts.push(  key + ':' + '(' + form_params[key] + ')' );
 			}
 		    }
 		    query = queryparts.join(' AND ');
@@ -245,18 +257,20 @@
 		// mark search form as irrelevant if solr query gets changed
 		$('#solr_query').bind('change keyup',function() {
 		    if ($('input#solr_query').val() != build_query()) {
-			$('#searchfields').addClass('searchfieldsoverride');
+			$('#searchfields').addClass('irrelevant');
+			$('#searchbar-top').addClass('irrelevant');
 		    }
 		    else {
-			$('#searchfields').removeClass('searchfieldsoverride');
+			$('#searchfields').removeClass('irrelevant');
+			$('#searchbar-top').removeClass('irrelevant');
 		    }
 		});
 
 		// update solr query if search form values change
-		$('#searchfields input:text').bind('change keyup',function() {
+		$('#searchfields,#searchbar-top input:text').bind('change keyup',function() {
 		    $('input#solr_query').val(build_query()).change();
 		});
-		$('#searchfields input[type=radio]').bind('change',function() {
+		$('#searchfields,#searchbar-top input[type=radio]').bind('change',function() {
 		    $('input#solr_query').val(build_query()).change();
 		});
 
@@ -287,7 +301,7 @@
 		// click on book's publishing date
 		$(document).on("click",".bookdate ul li",function() {
 		    var value=$(this).text();
-		    $('input#search_year').val(value).change();
+		    $('input#search_year').val('"'+value+'"').change();
 		    query = build_query();
 		    get_ebooks(start_pos=0);
 		});
@@ -297,6 +311,19 @@
 		    var value=$(this).text();
 		    reset_form();
 		    $('input#search_series').val('"'+value+'"').change();
+		    query = build_query();
+		    get_ebooks(start_pos=0);
+		});
+
+		// click on book's tag
+		$(document).on("click",".booktags ul li",function() {
+		    //var value = [];
+		    //value = $('input#search_tag').val().split(',');
+		    //value.push('"'+$(this).text()+'"');
+		    //$('input#search_tag').val(value.join(', ')).change();
+
+		    var value=$(this).text();
+		    $('input#search_tag').val('"'+value+'"').change();
 		    query = build_query();
 		    get_ebooks(start_pos=0);
 		});
@@ -316,18 +343,14 @@
 
 	<div id="searchcontainer">
 	    <form id="searchform">
-		<div id="querybar">
-		    <div id="querystring">
-			<label for="solr_query">SOLR Query</label>
-			<input type="text" name="solr_query" id="solr_query" />
-		    </div>
-		    <div id="buttons">
-			<input type="submit" id="searchbutton" value="Suchen" />
-			<input type="button" id="clearbutton" value="Zurücksetzen" />
-		    </div>
+
+		<div id="searchbar-top">
+		    <label for="search_text">Suche</label>
+		    <input type="text" name="text" id="search_text" />
+		    <input type="submit" id="searchbutton" value="Suchen" />
+		    <input type="button" id="clearbutton" value="Zurücksetzen" />
 		    <div id="status"></div>
 		</div>
-
 
 		<div id="searchfields">
 		    <div>
@@ -347,16 +370,22 @@
 			<input type="text" name="year" id="search_year" />
 		    </div>
 		    <div>
-			<label for="search_text">Irgendwo</label>
-			<input type="text" name="text" id="search_text" />
+			<label for="search_tag">Tags</label>
+			<input type="text" name="tag" id="search_tag" />
 		    </div>
 		    <div id="language">
 			<label for="search_lang_0">Sprache</label>
-			<input type="radio" name="lang" id="search_lang_0" value="" checked />Beides
-			<input type="radio" name="lang" id="search_lang_1" value="deu" />Deutsch
-			<input type="radio" name="lang" id="search_lang_2" value="eng" />Englisch
+			<input type="radio" name="lang" id="search_lang_0" value="" checked /><label class="radio" for="search_lang_0">Beides</label>
+			<input type="radio" name="lang" id="search_lang_1" value="deu" /><label class="radio" for="search_lang_1">Deutsch</label>
+			<input type="radio" name="lang" id="search_lang_2" value="eng" /><label class="radio" for="search_lang_2">Englisch</label>
 		    </div>
 		</div>
+
+		<div id="searchbar-bottom">
+		    <label for="solr_query">SOLR Query</label>
+		    <input type="text" name="solr_query" id="solr_query" />
+		</div>
+
 	    </form>
 	</div>
 	<div id="booklist"></div>

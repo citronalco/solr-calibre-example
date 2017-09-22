@@ -1,3 +1,9 @@
+/*
+* {
+    box-sizing: border-box;
+}
+*/
+
 body {
     margin: 0px;
     font-family: sans-serif;
@@ -5,85 +11,140 @@ body {
 
 /* searchcontainer contains the searchfields and the querybar */
 #searchcontainer {
+    position: fixed;
+
     background: none repeat scroll 0 0 #036185;
     color: white;
-    position: fixed;
+
     width: 100%;
     z-index: 999;
 }
+
 #searchcontainer label {
-    display: inline-block;
-    width: 100px;
     text-align: right;
-}
-#searchcontainer input[type=text] {
-    width: 350px;
+    display: inline-block;
+    width: 6.5rem;
+    line-height: 2;
+    padding: 5px;
 }
 
+
+/* Top Search bar */
+#searchbar-top {
+    display: flex;
+    flex-wrap: nowrap;
+    padding: 5px;
+    font-weight: bold;
+}
+#searchbar-top input[type=text] {
+    flex-grow: 5;
+    max-width: 62rem;
+}
+#searchbar-top input[type=button],input[type=submit] {
+    width: 7rem;
+    margin-left: 10px;
+}
 
 /* search fields */
 #searchfields {
+    display: flex;
+    flex-wrap: wrap;
     padding: 5px;
 }
+
 #searchfields div {
-    display: inline-block;
-    min-width: 500px;
+    display: flex;
+    flex-wrap: nowrap;
 }
-.searchfieldsoverride input[type=text] {
-    background-color: lightgrey;
+
+#searchfields input[type=text] {
+    width: 16rem;
+}
+#searchfields input[type=radio] {
+    margin-top: 0.5rem;
+}
+
+#searchfields label.radio {
+    text-align: left;
+    width: 4rem;
+    line-height: 2em;
 }
 
 
-/* SOLR query bar */
-#querybar {
+/* Bottom Search bar */
+#searchbar-bottom {
+    display: flex;
+    flex-wrap: nowrap;
     padding: 5px;
 }
-#querybar div {
-    display: inline-block;
+#searchbar-bottom input[type=text] {
+    flex-grow: 5;
+    max-width: 62rem;
+
 }
+#searchbar-bottom input[type=button],input[type=submit] {
+    width: 7rem;
+}
+
 #status {
-    float: right;
+    min-width: 14rem;
+    flex-grow: 1;
+    display: inline-block;
+    text-align: right;
     font-weight: bold;
-    padding-left: 1em;
-    padding-right: 1em;
     line-height: 2;
+    margin-left: 10px;
+    margin-right: 10px;
 }
 #status.error {
     background-color: red;
 }
 
+.irrelevant input[type=text] {
+    background-color: lightgrey;
+}
+
 
 /* booklist is a container for items of the class bookentry */
 #booklist {
-    padding-top: 3em;
+    width: 100%
+    padding-top: 15em;
+    display: table;
 }
 
-.bookentry {
-    display: grid;
-    grid-template-columns: 200px auto;
-    grid-gap: 20px;
+div .bookentry {
+    display: table-row;
+}
+
+div .bookcover {
+    display: table-cell;
+    width: 200px;
+
     border-bottom: 5px solid lightgrey;
     padding-top: 20px;
     padding-bottom: 20px;
     padding-left: 5px;
     padding-right: 5px;
 }
-
-.bookcover {
-    grid-column: 1;
-}
-.bookcover img {
+.bookcover img{
     width: 100%;
     padding-top: 5px;
     height: auto;
 }
 
-.bookdata {
-    grid-column: 2;
+.bookdata  {
+    display: table-cell;
+    vertical-align: top;
+
+    border-bottom: 5px solid lightgrey;
+    padding-top: 20px;
+    padding-bottom: 20px;
+    padding-left: 5px;
+    padding-right: 5px;
 }
 .bookdata div {
-    padding-top: 5px;
-    padding-bottom: 5px;
+	padding-top: 5px;
+	padding-bottom: 5px;
 }
 .bookdata a {
     text-decoration: none;
@@ -107,7 +168,7 @@ body {
     border-radius: 3px;
 }
 .bookdata .booktitle {
-    font-size: 180%;
+    font-size: 160%;
 }
 .bookdata .bookauthors li {
     color: #43b49e;
@@ -142,14 +203,14 @@ body {
     border-radius: 3px;
 }
 
-.bookdata .booksubjects li {
+.bookdata .booktags li {
     background-color: #5bc1df;
     color: white;
     font-size: 85%;
     border: 3px solid #5bc1df;
     border-radius: 3px;
 }
-.bookdata .booksubjects li {
+.bookdata .booktags li {
     color: white;
     cursor: pointer;
 
@@ -157,4 +218,32 @@ body {
 
 .bookdata .bookdescription h1 {
     font-size: 120%;
+}
+
+/*
+@media (max-width: 800px) {
+    #booklist {
+	padding-top: 22rem;
+    }
+*/
+
+@media (max-width: 1000px) {
+    #searchfields {
+	display: none;
+    }
+    #searchbar-top label {
+	display: none;
+    }
+    #clearbutton {
+	display: none;
+    }
+    #status {
+	display: none;
+    }
+    #searchbar-bottom {
+	display: none;
+    }
+    #booklist {
+	padding-top: 3rem;
+    }
 }
