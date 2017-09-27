@@ -108,7 +108,7 @@ body {
 /* booklist is a container for items of the class bookentry */
 #booklist {
     width: 100%;
-    padding-top: 15em;
+    padding-top: 14em;
     display: table;
 }
 
