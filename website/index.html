@@ -64,7 +64,7 @@
 	    // Path to calibre library
 	    var calibre_url_prefix = '/ebooksearch/calibrelibrary/';
 	    // Path to solr
-	    var solr_url_prefix = '/ebooksearch/solr/select/'
+	    var solr_url_prefix = '/ebooksearch/solr/select/';
 
 	    // retrieve max. NUM results at once
 	    var query_limit = 5;
@@ -91,7 +91,7 @@
 		function get_ebooks(start_pos) {
 		    if (query) {
 			$('#status').removeClass('error').text('Suche läuft...');
-			$.getJSON(solr_url_prefix + '/?q=' + encodeURIComponent(query) + '&wt=json&rows=' + query_limit + '&start=' + start_pos, function(data) {
+			$.getJSON(solr_url_prefix + '/?q=' + encodeURIComponent(query) + '&wt=json&rows=' + query_limit + '&start=' + start_pos+ '&sort=date%20desc', function(data) {
 			    if (data['responseHeader']['status'] != 0) {
 				$('#status').addClass('error').text('Keine Treffer');
 			    }

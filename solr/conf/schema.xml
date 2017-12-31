@@ -216,20 +216,20 @@
     <!-- omitNorms: ka, scheint standardmäßig auf false zu stehen -->
 
     <!-- title ist offenbar sorttitle, title_output der echte -->
-    <field name="title"		type="text"	indexed="true"	stored="false" />
-    <field name="title_output"	type="text"	indexed="false"	stored="true" />
+    <field name="title"		type="text"	indexed="true"	stored="false"	multiValued="true" />
+    <field name="title_output"	type="text"	indexed="false"	stored="true"	multiValued="false" />
 
     <field name="author"	type="text"	indexed="true"	stored="true"	multiValued="true" />
     <field name="author_facet"	type="string"	indexed="true"	stored="false"	multiValued="true" />
 
-    <field name="series"	type="text"	indexed="true"	stored="true"/>
-    <field name="series_index"	type="string"	indexed="true"	stored="true" />
+    <field name="series"	type="text"	indexed="true"	stored="true"	multiValued="false" />
+    <field name="series_index"	type="string"	indexed="true"	stored="true"	multiValued="false" />
 
     <field name="tag"		type="text"	indexed="true"	stored="true"	multiValued="true" />
     <field name="tag_facet"	type="string"	indexed="true"	stored="false"	multiValued="true" />
 
     <field name="abstract"	type="text"	indexed="true"	stored="false"	multiValued="false"	omitNorms="false" />
-    <field name="abstract_output" type="text"	indexed="false"	stored="true" />
+    <field name="abstract_output" type="text"	indexed="false"	stored="true"	multiValued="false" />
 
     <field name="path"		type="text"	indexed="false"	stored="true"	multiValued="false" />
     <field name="filename"	type="text"	indexed="false"	stored="true"	multiValued="false" />
@@ -241,25 +241,25 @@
 
     <field name="language"	type="string"	indexed="true"	stored="true"	multiValued="true" />
 
-    <field name="year"		type="string"	indexed="true"	stored="true" />
-    <field name="year_facet"	type="string"	indexed="true"	stored="false"/>
-    <field name="date"		type="date"	indexed="true"	stored="true"/>
-    <field name="date_facet"	type="tdate"	indexed="true"	stored="false"/>
+    <field name="year"		type="string"	indexed="true"	stored="true"	multiValued="false" />
+    <field name="year_facet"	type="string"	indexed="true"	stored="false"	multiValued="false" />
+    <field name="date"		type="date"	indexed="true"	stored="true"	multiValued="false" />
+    <field name="date_facet"	type="tdate"	indexed="true"	stored="false"	multiValued="false" />
 
     <!-- fields that are only used as source in copy field --> 
     <field name="publisher"           type="string" indexed="false" stored="true" />
 
     <!-- special fields used for sorting -->
-    <field name="author_sort" type="alphaOnlySort" indexed="true" stored="false" omitNorms="true" />
+    <field name="author_sort" type="alphaOnlySort" indexed="true" stored="false" omitNorms="true"	multiValued="false" />
     <field name="title_sort" type="alphaOnlySort" indexed="true" stored="false" omitNorms="true" />
-    <field name="server_date_published" type="slong" indexed="true" stored="false" omitNorms="true" />
+    <field name="server_date_published" type="slong" indexed="true" stored="false" omitNorms="true"	multiValued="false" />
 
     <!-- catchall field, containing all other searchable text fields (implemented
          via copyField further on in this schema) 
          indexes tokens both normally and in reverse for efficient
          leading wildcard queries
     -->
-    <field name="text" type="text" indexed="true" stored="false" multiValued="true" omitNorms="false"/>
+    <field name="text" type="text" indexed="true" stored="false" multiValued="true" omitNorms="false" />
 
     <!-- required for solr -->
     <field name="id"		type="string"	indexed="true"	stored="true"	required="true"	multiValued="false" />
