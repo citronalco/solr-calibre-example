@@ -5,7 +5,7 @@
 	<meta name="viewport" content="width=device-width" />
 	<title>Ebook Suche</title>
 	<link rel="stylesheet" type="text/css" media="screen" href="css/master.css" />
-	<script type="text/javascript" src="js/jquery-3.2.1.min.js"></script>
+	<script type="text/javascript" src="js/jquery-3.3.1.min.js"></script>
 	<script type="text/javascript" src="js/mustache.min.js"></script>
     </head>
 
@@ -14,47 +14,44 @@
 	<script type="text/template" id="template-bookitem">
 	    <div class="bookentry" id="book-{{{num}}}">
 	    <div class="bookcover">
-		<a href="{{{bookurl}}}">
+		<a href="{{{url}}}">
 		<img src="{{{coverurl}}}" alt="Buchcover"></a>
 	    </div>
 
 	    <div class="bookdata">
-		<div class="download">
-		    <a href="{{{url}}}">
-			Download {{format}}
-		    </a>
-		</div>
-		<div class="booktitle">
+		<a class="download" href="{{{url}}}">Download {{format}}</a>
+		<div class="title">
 		    <ul>{{{title}}}</ul>
 		</div>
-		<div class="bookauthors">
+
+		<div class="series">{{{series}}}</div>
+
+		<div class="author">
 		    <ul>{{{authors}}}</ul>
 		</div>
-		<div class="bookseries">
-		    <ul>{{{series}}}</ul>
-		</div>
-		<div class="booklanguages">
-		    Sprache:
+
+		<div class="language">
+		    <label>Sprache:</label>
 		    <ul>{{{languages}}}</ul>
 		</div>
-		<div class="bookidentifiers">
-		    Kennungen:
+		<div class="identifier">
+		    <label>Kennungen:</label>
 		    <ul>{{{identifiers}}}</ul>
 		</div>
-		<div class="booktags">
-		    Schlagwörter:
+		<div class="tag">
+		    <label>Schlagwörter:</label>
 		    <ul>{{{tags}}}</ul>
 		</div>
-		<div class="bookpublisher">
-		    Herausgeber:
-		    <ul>{{publisher}}</ul>
+		<div class="publisher">
+		    <label>Herausgeber:</label>
+		    <ul>{{{publisher}}}</ul>
 		</div>
-		<div class="bookdate">
-		    Herausgabedatum:
-		    <ul><li>{{date}}</li></ul>
+		<div class="year">
+		    <label>Erscheinungsdatum:</label>
+		    <ul>{{{year}}}</ul>
 		</div>
-		<div class="bookdescription">
-		    <h1>Beschreibung</h1>
+		<div class="description">
+		    <label>Beschreibung:</label>
 		    {{description}}
 		</div>
 	    </div>
@@ -67,13 +64,26 @@
 	    var solr_url_prefix = '/ebooksearch/solr/select/';
 
 	    // retrieve max. NUM results at once
-	    var query_limit = 5;
+	    var query_limit = 10;
+
+	    var query_params = {
+		'text' : null,
+		'title' : null,
+		'author' : null,
+		'series' : null,
+		'language' : null,
+		'tag' : [],
+		'year' : null
+	    }
 
 	    $(function() {
 		var start = 0;
 		var num_docs = 0;	// total results
 		var cnt = 0;	// counter for bookitems
 		var query = '';
+
+		var previous_query;
+		var previous_start_pos;
 
 		var scroll_load_finished = true;	// Flag to avoid multiple AJAX calls at once when scrolling to bottom
 		//$('#searchfields').stop(false,true).slideDown('fast');	// start with searchfield visible
@@ -89,7 +99,10 @@
 		});
 
 		function get_ebooks(start_pos) {
-		    if (query) {
+		    if ((query) && !(query == previous_query && start_pos == previous_start_pos)) {
+			previous_query = query;
+			previous_start_pos = start_pos;
+			
 			$('#status').removeClass('error').text('Suche läuft...');
 			$.getJSON(solr_url_prefix + '/?q=' + encodeURIComponent(query) + '&wt=json&rows=' + query_limit + '&start=' + start_pos+ '&sort=date%20desc', function(data) {
 			    if (data['responseHeader']['status'] != 0) {
@@ -112,9 +125,11 @@
 				    $('body,html').scrollTop(0);
 				}
 
-				var template = $('#template-bookitem').html();	// load template
+				// load template
+				var template = $('#template-bookitem').html();
 
-				$.each(data['response']['docs'], function(key, val) {	// fill template for each book
+				// fill template for each book
+				$.each(data['response']['docs'], function(key, val) {
 				    // Book URL
 				    var bookurl = calibre_url_prefix + '/' + val['path'] + '/' +val['filename']
 
@@ -124,7 +139,7 @@
 				    }
 
 				    // Book Title
-				    var booktitle = val['title_output'];
+				    var booktitle = '<li>' + htmlEncode(val['title_output']) + '</li>';
 
 				    // Book Format
 				    var bookformat = val['filetype'].toUpperCase();
@@ -165,9 +180,9 @@
 				    // Book Series
 				    var bookseries='';
 				    if (val['series']) {
-					bookseries = '<span>' + htmlEncode(val['series']) + '</span>';
+					bookseries = htmlEncode(val['series']);
 					if (val['series_index']) {
-					    bookseries = 'Band ' + htmlEncode(val['series_index']) + ' von ' + bookseries;
+					    bookseries = 'Band ' + htmlEncode(val['series_index']) + ' von <ul><li>' + bookseries + '</li></ul>';
 					}
 				    }
 
@@ -177,11 +192,11 @@
 					bookdescription=val['abstract_output'];
 				    }
 
-				    // Date
-				    var bookdate = val['year'];
+				    // Year
+				    var bookyear = '<li>' + htmlEncode(val['year']) + '</li>';
 
 				    // Publisher
-				    var bookpublisher = val['publisher'];
+				    var bookpublisher = '<li>' + htmlEncode(val['publisher']) + '</li>';
 
 				    // stick everything in a array for Mustache to fill the Template
 				    var bookdata = {
@@ -194,7 +209,7 @@
 					tags: booktags,
 					identifiers: bookidentifiers,
 					series: bookseries,
-					date: bookdate,
+					year: bookyear,
 					publisher: bookpublisher,
 					languages: booklanguages,
 					description: bookdescription
@@ -202,8 +217,30 @@
 				    var bookdetails = Mustache.render(template,bookdata);	// fill template with values
 				    $('#booklist').append(bookdetails).children(':last').hide().fadeIn(1000);	// append book to booklist
 
+				    // mark selected properties
+				    for (var key in query_params) {
+					if (query_params[key]) {
+					    if (Array.isArray(query_params[key])) {
+						for (var i = 0; i < query_params[key].length; i++) {
+						    if (query_params[key][i]) {
+							$('div.bookdata>div.'+key+'>ul>li').each(function() {
+							    if (query_params[key][i].toUpperCase() === $(this).text().toUpperCase()) {
+								$(this).addClass('selected');
+							    }
+							});
+						    }
+						}
+					    }
+					    else {
+						$('div.bookdata>div.'+key+'>ul>li').each(function() {
+						    if (query_params[key].toUpperCase() === $(this).text().toUpperCase()) {
+							$(this).addClass('selected');
+						    }
+						});
+					    }
+					}
+				    }
 				});
-
 			    }
 			}).fail(function() {
 			    $('#status').addClass('error').text('Fehler');
@@ -211,51 +248,57 @@
 			scroll_load_finished = true;
 		    }
 		}
-/* this makes the page unusable on smaller devices: */
-/*
-		$('#searchcontainer').mouseenter(function(){
-		    $('#searchfields').stop(false,true).slideDown('fast');
-		});
-		$('#searchcontainer').mouseleave(function(){
-		    if (num_docs > 0) {
-			$('#searchfields').stop(false,true).slideUp('fast');
-		    }
-		});
-*/
-/*
-		$('#searchcontainer:not("input[type=text]")').on("click",function(){
-		    $('#searchfields').stop(false,true).slideToggle('fast');
-		});
-*/
 
 		// construct solr query
 		function build_query() {
-		    var form_params = {
-			'title' : $('input#search_title').filter(':visible').val(),
-			'author' : $('input#search_author').filter(':visible').val(),
-			'series' : $('input#search_series').filter(':visible').val(),
-			'text' : $('input#search_text').filter(':visible').val(),
-			'year' : $('input#search_year').filter(':visible').val(),
-			'tag' : $('input#search_tag').filter(':visible').val(),
-			'language' : $('#language input:checked').filter(':visible').val()
-		    }
-		    var queryparts = new Array;
-		    for (var key in form_params) {
-			if (form_params[key]) {
-			    queryparts.push(  key + ':' + '(' + form_params[key] + ')' );
+		    //var queryparts = new Array;
+		    var queryparts = [];
+		    for (var key in query_params) {
+			if (Array.isArray(query_params[key])) {
+			    for (var i = 0; i < query_params[key].length; i++) {
+				if (query_params[key][i]) {
+				    queryparts.push(  key + ':' + '(' + escape_lucene(query_params[key][i]) + ')' );
+				}
+			    }
+			}
+			else if (query_params[key]) {
+			    queryparts.push(  key + ':' + '(' + escape_lucene(query_params[key]) + ')' );
 			}
 		    }
-		    query = queryparts.join(' AND ');
-		    return query
+		    return queryparts.join(' AND ');
 		};
+
+		// escape special characters solr in solr query
+		function escape_lucene(s) {
+		    var escape = ['+', '-', '&', '!', '(', ')', '{', '}', '[', ']', '^', '"', '~', '*', '?', ':', '\\'];
+		    var regexp = new RegExp("(\\" + escape.join("|\\") + ")", "g");
+		    return s.replace(regexp, "\\$1");
+		}
 
 		// clear button
 		$('#clearbutton').on("click",function() {
-		    reset_form();
+		    $('span#solr_query_readonly').text('');
+
+		    $("#searchcontainer").find('input:text').val('');
+		    $('span#solr_query_readonly').text('');
+		    $("#search_lang_any").prop("checked",true);
+
+		    query = null;
+		    query_params = {
+			'text' : null,
+			'title' : null,
+			'author' : null,
+			'series' : null,
+			'year' : null,
+			'tag' : [],
+			'language' : null
+		    }
 		});
 
-		// mark search form as irrelevant if solr query gets changed
-		$('#solr_query').bind('change keyup',function() {
+		// mark search form as "irrelevant" if solr query gets changed
+		$('#solr_query').bind('init change keyup paste',function() {
+		    console.log("solr__query_init");
+
 		    if ($('input#solr_query').val() != build_query()) {
 			$('#searchfields').addClass('irrelevant');
 			$('#searchbar-top').addClass('irrelevant');
@@ -264,76 +307,97 @@
 			$('#searchfields').removeClass('irrelevant');
 			$('#searchbar-top').removeClass('irrelevant');
 		    }
-		});
+		    query = $('input#solr_query').val();
+		    get_ebooks(start_pos=0);
+		}).trigger('init');
 
-		// update solr query if search form values change
-		$('#searchfields,#searchbar-top input:text').bind('change keyup',function() {
-		    $('input#solr_query').val(build_query()).change();
-		});
-		$('#searchfields,#searchbar-top input[type=radio]').bind('change',function() {
-		    $('input#solr_query').val(build_query()).change();
+		$.each(query_params, function(key,value) {
+		    $(document).on('change keyup paste','#searchfields>div>input[name='+key+'],#searchbar-top>input[name='+key+']',function() {
+			$('#searchfields').removeClass('irrelevant');
+			$('#searchbar-top').removeClass('irrelevant');
+
+			var key = $(this).attr('name');
+			var val = $(this).val();
+
+			if (Array.isArray(query_params[key])) {
+			    var valArr = [];
+			    var r = /[^,\s*"]+|"([^"]*)"/g;
+			    do {
+				var match = r.exec(val);
+				if (match != null) {
+				    valArr.push(match[1] ? match[1] : match[0]);
+				}
+			    } while (match != null);
+
+			    query_params[key] = valArr;
+			}
+			else {
+			    query_params[key] = val;
+			}
+			query = build_query();
+			$('input#solr_query').val(query);
+			$('span#solr_query_readonly').text(query);
+			get_ebooks(start_pos=0);
+		    });
 		});
 
 		// search button
-		$('#searchform').on("submit",function(e) {
-		    query = $('input#solr_query').val();
+		$('#searchbutton').on("click",function(e) {
+		    //query = $('input#solr_query').val();
 		    get_ebooks(start_pos=0);
 		    return false;
 		});
 
-		// click on book's author name
-		$(document).on("click",".bookauthors ul li",function() {
-		    var value=$(this).text();
-		    reset_form();
-		    $('input#search_author').val('"'+value+'"').change();
-		    query = build_query();
-		    get_ebooks(start_pos=0);
-		});
+		// add listener to all book items that are in query_params
+		$.each(query_params, function(key,value) {
+		    $(document).on('click','div.bookdata>div.' + key + '>ul>li',function() {
+			// search
+			$('#searchfields').removeClass('irrelevant');
+			$('#searchbar-top').removeClass('irrelevant');
 
-		// click on book's language
-		$(document).on("click",".booklanguages ul li",function() {
-		    var value=$(this).text();
-		    $('input[name="lang"][value='+value+']').prop('checked',true).change();
-		    query = build_query();
-		    get_ebooks(start_pos=0);
-		});
+			// update query_params
+			if (Array.isArray(query_params[key])) {
+			    var index = $.inArray($(this).text(),query_params[key]);
+			    if (index != -1 ) {
+				query_params[key].splice(index,1);
 
-		// click on book's publishing date
-		$(document).on("click",".bookdate ul li",function() {
-		    var value=$(this).text();
-		    $('input#search_year').val('"'+value+'"').change();
-		    query = build_query();
-		    get_ebooks(start_pos=0);
-		});
+				var out = $.map(query_params[key], function(e,i) {
+				    if (e.indexOf(' ') > -1) { return '"'+e+'"'; }
+				    else { return e; }
+				});
+				$("input[type='text'][name='"+key+"']").val(out.join(", "));
+			    }
+			    else {
+				query_params[key].push($(this).text());
 
-		// click on book's series
-		$(document).on("click",".bookseries span",function() {
-		    var value=$(this).text();
-		    reset_form();
-		    $('input#search_series').val('"'+value+'"').change();
-		    query = build_query();
-		    get_ebooks(start_pos=0);
-		});
+				var out = $.map(query_params[key], function(e,i) {
+				if (e.indexOf(' ') > -1) { return '"'+e+'"'; }
+				    else { return e; }
+				});
+				$("input[type='text'][name='"+key+"']").val(out.join(", "));
+			    }
+			}
+			else {
+			    if (query_params[key] === $(this).text()) {
+				query_params[key] = null;
 
-		// click on book's tag
-		$(document).on("click",".booktags ul li",function() {
-		    //var value = [];
-		    //value = $('input#search_tag').val().split(',');
-		    //value.push('"'+$(this).text()+'"');
-		    //$('input#search_tag').val(value.join(', ')).change();
+				$("input[type='text'][name='"+key+"']").val('');
+				$("input[type='radio'][name='"+key+"'][value='']").prop('checked',true);
+			    }
+			    else {
+				query_params[key] = $(this).text();
 
-		    var value=$(this).text();
-		    $('input#search_tag').val('"'+value+'"').change();
-		    query = build_query();
-		    get_ebooks(start_pos=0);
+				$("input[type='text'][name='"+key+"']").val($(this).text());
+				$("input[type='radio'][name='"+key+"'][value='"+$(this).text()+"']").prop('checked',true);
+			    }
+			}
+			query = build_query();
+			$('input#solr_query').val(query);
+			$('span#solr_query_readonly').text(query);
+			get_ebooks(start_pos=0);
+		    });
 		});
 	    });
-
-	    // clear form data
-	    function reset_form() {
-		$("#searchform").find('input:text, input:password, input:file, select, textarea').val('');
-		$("#searchform").find('input:radio, input:checkbox').removeAttr('checked').removeAttr('selected');
-	    }
 
 	    // html encode text
 	    function htmlEncode(value) {
@@ -341,14 +405,12 @@
 	    }
 	</script>
 
-	<div id="searchcontainer">
-	    <form id="searchform">
-
+	    <div id="searchcontainer">
 		<div id="searchbar-top">
 		    <label for="search_text">Suche</label>
 		    <input type="text" name="text" id="search_text" />
-		    <input type="submit" id="searchbutton" value="Suchen" />
 		    <input type="button" id="clearbutton" value="Zurücksetzen" />
+		    <input type="button" id="searchbutton" value="Suchen" />
 		    <div id="status"></div>
 		</div>
 
@@ -375,9 +437,9 @@
 		    </div>
 		    <div id="language">
 			<label for="search_lang_0">Sprache</label>
-			<input type="radio" name="lang" id="search_lang_0" value="" checked /><label class="radio" for="search_lang_0">Beides</label>
-			<input type="radio" name="lang" id="search_lang_1" value="deu" /><label class="radio" for="search_lang_1">Deutsch</label>
-			<input type="radio" name="lang" id="search_lang_2" value="eng" /><label class="radio" for="search_lang_2">Englisch</label>
+			<input type="radio" name="language" id="search_lang_any" value="" /><label for="search_lang_any" class="radio">Egal</label>
+			<input type="radio" name="language" id="search_lang_deu" value="deu" /><label for="search_lang_deu" class="radio">Deutsch</label>
+			<input type="radio" name="language" id="search_lang_eng" value="eng" /><label for="search_lang_eng" class="radio">Englisch</label>
 		    </div>
 		</div>
 
@@ -385,9 +447,11 @@
 		    <label for="solr_query">SOLR Query</label>
 		    <input type="text" name="solr_query" id="solr_query" />
 		</div>
-
-	    </form>
-	</div>
+		<div id="searchbar-bottom-readonly">
+		    <label for="solr_query">Query:</label>
+		    <span id="solr_query_readonly"/>
+		</div>
+	    </div>
 	<div id="booklist"></div>
     </body>
 </html>

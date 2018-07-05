@@ -61,12 +61,11 @@ body {
     width: 16rem;
 }
 #searchfields input[type=radio] {
-    margin-top: 0.5rem;
+    margin-top: 0.8rem;
 }
-
-#searchfields label.radio {
+#searchcontainer label.radio {
     text-align: left;
-    width: 4rem;
+    width: auto;
     line-height: 2em;
 }
 
@@ -80,10 +79,13 @@ body {
 #searchbar-bottom input[type=text] {
     flex-grow: 5;
     max-width: 62rem;
-
+    font-size: 80%;
 }
 #searchbar-bottom input[type=button],input[type=submit] {
     width: 7rem;
+}
+#searchbar-bottom-readonly {
+    display: none;
 }
 
 #status {
@@ -108,7 +110,7 @@ body {
 /* booklist is a container for items of the class bookentry */
 #booklist {
     width: 100%;
-    padding-top: 14em;
+    padding-top: 12em;
     display: table;
 }
 
@@ -159,7 +161,7 @@ div .bookcover {
     display: inline-block;
     margin-right: 10px;
 }
-.bookdata .download a {
+.bookdata a.download {
     display: inline-block;
     background-color: #408ccb;
     color: white;
@@ -167,35 +169,31 @@ div .bookcover {
     border: 8px solid #408ccb;
     border-radius: 3px;
 }
-.bookdata .booktitle {
+.bookdata .title li {
     font-size: 160%;
 }
-.bookdata .bookauthors li {
+.bookdata .author li {
+    color: #43b49e;
+    cursor: pointer;
+    margin-bottom: 20px;
+}
+.bookdata .year li {
     color: #43b49e;
     cursor: pointer;
 }
-.bookdata .bookdate li {
+.bookdata .series li {
     color: #43b49e;
     cursor: pointer;
 }
-.bookdata .bookseries span {
-    color: #43b49e;
-    cursor: pointer;
-}
-
-.bookdata .booklanguages li {
+.bookdata .language li {
     background-color: #9a9a9a;
     color: white;
     font-size: 85%;
     border: 3px solid #9a9a9a;
     border-radius: 3px;
-}
-.bookdata .booklanguages li {
-    color: white;
     cursor: pointer;
 }
-
-.bookdata .bookidentifiers li {
+.bookdata .identifier li {
     background-color: #57b555;
     color: white;
     font-size: 85%;
@@ -203,21 +201,25 @@ div .bookcover {
     border-radius: 3px;
 }
 
-.bookdata .booktags li {
+.bookdata .tag li {
     background-color: #5bc1df;
     color: white;
     font-size: 85%;
     border: 3px solid #5bc1df;
     border-radius: 3px;
-}
-.bookdata .booktags li {
-    color: white;
     cursor: pointer;
-
+}
+.bookdata li.selected {
+    padding: 3px;
+    border: 3px solid red;
 }
 
-.bookdata .bookdescription h1 {
-    font-size: 120%;
+.bookdata .description label {
+    display: block;
+    font-weight: bold;
+    font-size: 110%;
+    padding-top: 10px;
+    padding-bottom: 5px;
 }
 
 /*
@@ -229,19 +231,31 @@ div .bookcover {
 
 @media (max-width: 1000px) {
     #searchfields {
-	display: none;
+	visibility: hidden;
+	height: 0;
+	padding: 0;
     }
     #searchbar-top label {
 	display: none;
     }
     #clearbutton {
-	display: none;
     }
     #status {
 	display: none;
     }
     #searchbar-bottom {
 	display: none;
+    }
+    #searchbar-bottom-readonly {
+	padding: 0;
+	font-size: 66%;
+	display: block;
+	height: 20px;
+	width: 100%;
+    }
+    #searchcontainer label {
+	width: auto;
+	line-height: 0;
     }
     #booklist {
 	padding-top: 3rem;
