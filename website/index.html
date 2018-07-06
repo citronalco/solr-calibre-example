@@ -21,34 +21,34 @@
 	    <div class="bookdata">
 		<a class="download" href="{{{url}}}">Download {{format}}</a>
 		<div class="title">
-		    <ul>{{{title}}}</ul>
+		    {{{title_output}}}
 		</div>
 
 		<div class="series">{{{series}}}</div>
 
 		<div class="author">
-		    <ul>{{{authors}}}</ul>
+		    {{{author}}}
 		</div>
 
 		<div class="language">
 		    <label>Sprache:</label>
-		    <ul>{{{languages}}}</ul>
+		    {{{language}}}
 		</div>
 		<div class="identifier">
 		    <label>Kennungen:</label>
-		    <ul>{{{identifiers}}}</ul>
+		    {{{identifier}}}
 		</div>
 		<div class="tag">
 		    <label>Schlagwörter:</label>
-		    <ul>{{{tags}}}</ul>
+		    {{{tag}}}
 		</div>
 		<div class="publisher">
 		    <label>Herausgeber:</label>
-		    <ul>{{{publisher}}}</ul>
+		    {{{publisher}}}
 		</div>
 		<div class="year">
 		    <label>Erscheinungsdatum:</label>
-		    <ul>{{{year}}}</ul>
+		    {{{year}}}
 		</div>
 		<div class="description">
 		    <label>Beschreibung:</label>
@@ -138,44 +138,8 @@
 					coverurl = calibre_url_prefix + '/' + val['path'] + '/' + val['coverfile'];
 				    }
 
-				    // Book Title
-				    var booktitle = '<li>' + htmlEncode(val['title_output']) + '</li>';
-
 				    // Book Format
 				    var bookformat = val['filetype'].toUpperCase();
-
-				    // Book Author
-				    var bookauthors='';
-				    if (val['author']) {
-					for (var i=0;i<val['author'].length;i++) {
-					    bookauthors += '<li>' + htmlEncode(val['author'][i]) + '</li>';
-					}
-				    }
-
-				    // Book Tags
-				    var booktags='';
-				    if (val['tag']) {
-					for (var i=0;i<val['tag'].length;i++) {
-					    booktags += '<li>' + htmlEncode(val['tag'][i]) + '</li>';
-					}
-				    }
-
-				    // Book Identifiers
-				    var bookidentifiers='';
-				    if (val['identifier']) {
-					for (var i=0;i<val['identifier'].length;i++) {
-					    if (val['identifier'][i].substr(0,5)=='uuid:') { continue; }	// skip calibre uuid
-					    bookidentifiers += '<li>' + htmlEncode(val['identifier'][i]) + '</li>';
-					}
-				    }
-
-				    // Book Languages
-				    var booklanguages='';
-				    if (val['language']) {
-					for (var i=0;i<val['language'].length;i++) {
-					    booklanguages += '<li>' + htmlEncode(val['language'][i]) + '</li>';
-					}
-				    }
 
 				    // Book Series
 				    var bookseries='';
@@ -192,28 +156,32 @@
 					bookdescription=val['abstract_output'];
 				    }
 
-				    // Year
-				    var bookyear = '<li>' + htmlEncode(val['year']) + '</li>';
-
-				    // Publisher
-				    var bookpublisher = '<li>' + htmlEncode(val['publisher']) + '</li>';
-
 				    // stick everything in a array for Mustache to fill the Template
 				    var bookdata = {
 					num: cnt++,
 					url: bookurl,
 					format: bookformat,
 					coverurl: coverurl,
-					title: booktitle,
-					authors: bookauthors,
-					tags: booktags,
-					identifiers: bookidentifiers,
 					series: bookseries,
-					year: bookyear,
-					publisher: bookpublisher,
-					languages: booklanguages,
 					description: bookdescription
 				    };
+
+				    ['title_output','author','language','publisher','year','identifier','tag'].map(function(key) {
+					var output='';
+					if (val[key]) {
+					    if (Array.isArray(val[key])) {
+						for (var i=0; i<val[key].length; i++) {
+						    output += '<li>' + htmlEncode(val[key][i]) + '</li>';
+						}
+						output = '<ul>' + output + '</ul>';
+					    }
+					    else {
+						output = '<ul><li>' + val[key] + '</li></ul>';
+					    }
+					}
+					bookdata[key] = output;
+				    });
+
 				    var bookdetails = Mustache.render(template,bookdata);	// fill template with values
 				    $('#booklist').append(bookdetails).children(':last').hide().fadeIn(1000);	// append book to booklist
 
@@ -297,8 +265,6 @@
 
 		// mark search form as "irrelevant" if solr query gets changed
 		$('#solr_query').bind('init change keyup paste',function() {
-		    console.log("solr__query_init");
-
 		    if ($('input#solr_query').val() != build_query()) {
 			$('#searchfields').addClass('irrelevant');
 			$('#searchbar-top').addClass('irrelevant');
@@ -436,7 +402,7 @@
 			<input type="text" name="tag" id="search_tag" />
 		    </div>
 		    <div id="language">
-			<label for="search_lang_0">Sprache</label>
+			<label for="search_lang_any">Sprache</label>
 			<input type="radio" name="language" id="search_lang_any" value="" /><label for="search_lang_any" class="radio">Egal</label>
 			<input type="radio" name="language" id="search_lang_deu" value="deu" /><label for="search_lang_deu" class="radio">Deutsch</label>
 			<input type="radio" name="language" id="search_lang_eng" value="eng" /><label for="search_lang_eng" class="radio">Englisch</label>
@@ -449,7 +415,7 @@
 		</div>
 		<div id="searchbar-bottom-readonly">
 		    <label for="solr_query">Query:</label>
-		    <span id="solr_query_readonly"/>
+		    <span id="solr_query_readonly"></span>
 		</div>
 	    </div>
 	<div id="booklist"></div>
