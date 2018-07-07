@@ -238,7 +238,8 @@
 
 		// escape special characters solr in solr query
 		function escape_lucene(s) {
-		    var escape = ['+', '-', '&', '!', '(', ')', '{', '}', '[', ']', '^', '"', '~', '*', '?', ':', '\\'];
+		    //var escape = ['+', '-', '&', '!', '(', ')', '{', '}', '[', ']', '^', '"', '~', '*', '?', ':', '\\'];
+		    var escape = ['+', '-', '&', '!', '(', ')', '{', '}', '[', ']', '^', '"', '~', '?', ':', '\\'];
 		    var regexp = new RegExp("(\\" + escape.join("|\\") + ")", "g");
 		    return s.replace(regexp, "\\$1");
 		}
