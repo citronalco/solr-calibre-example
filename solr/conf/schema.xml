@@ -247,7 +247,7 @@
     <field name="date_facet"	type="tdate"	indexed="true"	stored="false"	multiValued="false" />
 
     <!-- fields that are only used as source in copy field --> 
-    <field name="publisher"           type="string" indexed="false" stored="true" />
+    <field name="publisher"           type="text" indexed="true" stored="true" />
 
     <!-- special fields used for sorting -->
     <field name="author_sort" type="alphaOnlySort" indexed="true" stored="false" omitNorms="true"	multiValued="false" />
