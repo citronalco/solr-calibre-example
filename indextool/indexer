@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import xml.etree.ElementTree as etree
@@ -31,7 +31,7 @@ def get_metadata(basedir):
         if 'metadata.opf' in files:
             path = '/'.join(root.split('/')[-2:])
             filename = get_ebook_file(files)
-	    extension = os.path.splitext(filename)[1].lower()[1:]
+            extension = os.path.splitext(filename)[1].lower()[1:]
             cover = ''
             if 'cover.jpg' in files:
                 cover = 'cover.jpg'
@@ -45,24 +45,24 @@ def parse_metadata(metadata):
     root = x.getroot()
 
     def get_field(matcher):
-	matches = []
+        matches = []
         for match in root.findall('./opf:metadata/dc:%s' % matcher, namespaces=namespaces):
-	    matches.append(match.text)
+            matches.append(match.text)
         return matches
 
     def get_meta_field(matcher):
-	matches = []
+        matches = []
         for match in root.findall("./opf:metadata/opf:meta[@name='%s']" % matcher, namespaces=namespaces):
-	    matches.append(match.get("content"))
-	return matches
+            matches.append(match.get("content"))
+        return matches
 
     def get_identifiers():
-	matches = []
+        matches = []
         for match in root.findall("./opf:metadata/dc:identifier[@opf:scheme]", namespaces=namespaces):
-	    identifier_type = match.get('{http://www.idpf.org/2007/opf}scheme')
-	    if identifier_type == 'calibre':
-		continue
-	    matches.append(identifier_type + ':' + match.text)
+            identifier_type = match.get('{http://www.idpf.org/2007/opf}scheme')
+            if identifier_type == 'calibre':
+                continue
+            matches.append(identifier_type + ':' + match.text)
         return matches
 
 
@@ -79,19 +79,19 @@ def parse_metadata(metadata):
     # description may contain html, we remove that
     description = get_field('description')
     if description:
-	soup = BeautifulSoup(description[0],"lxml")
-	for i in soup (['script','style']):	# remove script and style
-	    i.extract()
-	description = soup.get_text()	# get text
-	lines = (line.strip() for line in description.splitlines())	# break into lines and remove leading and trailing space on each
-	chunks = (phrase.strip() for line in lines for phrase in line.split("  "))	# break multi-headlines into a line each
-	description = '\n'.join(chunk for chunk in chunks if chunk)	# drop blank lines
+        soup = BeautifulSoup(description[0],"lxml")
+        for i in soup (['script','style']):	# remove script and style
+            i.extract()
+        description = soup.get_text()	# get text
+        lines = (line.strip() for line in description.splitlines())	# break into lines and remove leading and trailing space on each
+        chunks = (phrase.strip() for line in lines for phrase in line.split("  "))	# break multi-headlines into a line each
+        description = '\n'.join(chunk for chunk in chunks if chunk)	# drop blank lines
 
     identifier = get_identifiers()
     language = get_field('language')
     date = get_field('date')
     if (date[0]):
-	date="%sZ" % parse(date[0]).astimezone(tzutc()).isoformat()
+        date="%sZ" % parse(date[0]).astimezone(tzutc()).isoformat()
 
     publisher = get_field('publisher')
     author_sort = get_meta_field('calibre:author_sort')
@@ -121,10 +121,10 @@ def parse_metadata(metadata):
             'date' : date,
             'year': date[:4],
 
-    	    'publisher': publisher,
+            'publisher': publisher,
 
-    	    'author_sort': author_sort,
-    	    'title_sort': title_sort,
+            'author_sort': author_sort,
+            'title_sort': title_sort,
            }
 
 
@@ -154,6 +154,7 @@ if __name__ == '__main__':
         if not ebook_data:
             print("Unable to find metadata in %s." % metadata_file)
             continue
+
         ebook_data.update({'path': path,
                            'coverfile': cover,
                            'filename': filename,
