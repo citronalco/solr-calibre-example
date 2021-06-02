@@ -61,7 +61,7 @@ body {
     width: 16rem;
 }
 #searchfields input[type=radio] {
-/*    margin-top: 0.8rem; */
+    vertical-align: baseline;
 }
 #searchcontainer label.radio {
     text-align: left;

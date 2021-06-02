@@ -66,14 +66,18 @@
 	    // retrieve max. NUM results at once
 	    var query_limit = 10;
 
+	    // filter out "trash"
+	    var query_no_trash = 'NOT publisher:(autorenservices OR cora OR norderstedt OR bookrix OR self-publishing OR selfpublishing OR "independent publishing" OR "direct publishing" OR epubli OR independent OR lyx OR mira OR neobooks OR beatrice OR addictive OR kelter OR "amazon crossing" OR like-erotica OR "me and the muse" OR dreamspinner) AND publisher:[* TO *]';
+
 	    var query_params = {
 		'text' : null,
 		'title' : null,
 		'author' : null,
 		'series' : null,
-		'language' : null,
+		'language' : "deu",
 		'tag' : [],
-		'year' : null
+		'year' : null,
+		'trash': null
 	    }
 
 	    $(function() {
@@ -88,6 +92,9 @@
 		var scroll_load_finished = true;	// Flag to avoid multiple AJAX calls at once when scrolling to bottom
 		//$('#searchfields').stop(false,true).slideDown('fast');	// start with searchfield visible
 
+		// on load immediatelly show some books
+		start_search();
+
 		$(window).scroll(function() {
 		    if (scroll_load_finished == true && $(window).scrollTop() >= $(document).height() - $(window).height() - 300) {
 			if (num_docs > start_pos+query_limit) {
@@ -98,8 +105,15 @@
 		    }
 		});
 
+		function start_search() {
+		    query = build_query();
+		    $('input#solr_query').val(query);
+		    $('span#solr_query_readonly').text(query);
+		    get_ebooks(start_pos=0);
+		}
+
 		function get_ebooks(start_pos) {
-		    if ((query) && !(query == previous_query && start_pos == previous_start_pos)) {
+		    if ((query==="") || (query) && !(query == previous_query && start_pos == previous_start_pos)) {
 			previous_query = query;
 			previous_start_pos = start_pos;
 			
@@ -230,10 +244,24 @@
 			    }
 			}
 			else if (query_params[key]) {
-			    queryparts.push(  key + ':' + '(' + escape_lucene(query_params[key]) + ')' );
+			    // special handling for "trash" button: adds a complete query
+			    if (key == "trash") {
+				if (query_params[key] == "no") {
+				    queryparts.push(query_no_trash)
+				}
+			    }
+			    else {
+				queryparts.push(  key + ':' + '(' + escape_lucene(query_params[key]) + ')' );
+			    }
 			}
 		    }
-		    return queryparts.join(' AND ');
+		    // if query is empty search for everything
+		    if (queryparts.length == 0) {
+			return "*:*";
+		    }
+		    else {
+			return queryparts.join(' AND ');
+		    }
 		};
 
 		// escape special characters solr in solr query
@@ -250,9 +278,9 @@
 
 		    $("#searchcontainer").find('input:text').val('');
 		    $('span#solr_query_readonly').text('');
-		    $("#search_lang_any").prop("checked",true);
+		    $("#search_lang_deu").prop("checked",true);
+		    $("#search_trash_yes").prop("checked",true);
 
-		    query = null;
 		    query_params = {
 			'text' : null,
 			'title' : null,
@@ -260,8 +288,11 @@
 			'series' : null,
 			'year' : null,
 			'tag' : [],
-			'language' : null
+			'language' : "deu",
+			'trash' : "yes"
 		    }
+
+		    start_search();
 		});
 
 		// mark search form as "irrelevant" if solr query gets changed
@@ -278,8 +309,10 @@
 		    get_ebooks(start_pos=0);
 		}).trigger('init');
 
+		// add listeners to input fields to update query on changes
 		$.each(query_params, function(key,value) {
-		    $(document).on('change keyup paste','#searchfields>div>input[name='+key+'],#searchbar-top>input[name='+key+']',function() {
+		    //$(document).on('change keyup paste','#searchfields>div>input[name='+key+'],#searchbar-top>input[name='+key+']',function() {
+		    $(document).on('change keyup paste','input[name='+key+'],#searchbar-top>input[name='+key+']',function() {
 			$('#searchfields').removeClass('irrelevant');
 			$('#searchbar-top').removeClass('irrelevant');
 
@@ -301,10 +334,8 @@
 			else {
 			    query_params[key] = val;
 			}
-			query = build_query();
-			$('input#solr_query').val(query);
-			$('span#solr_query_readonly').text(query);
-			get_ebooks(start_pos=0);
+
+			start_search();
 		    });
 		});
 
@@ -404,9 +435,29 @@
 		    </div>
 		    <div id="language">
 			<label for="search_lang_any">Sprache</label>
-			<input type="radio" name="language" id="search_lang_any" value="" /><label for="search_lang_any" class="radio">Egal</label>
-			<input type="radio" name="language" id="search_lang_deu" value="deu" /><label for="search_lang_deu" class="radio">Deutsch</label>
-			<input type="radio" name="language" id="search_lang_eng" value="eng" /><label for="search_lang_eng" class="radio">Englisch</label>
+			<label for="search_lang_any" class="radio">
+			    <input type="radio" name="language" id="search_lang_any" value="" />
+			    Egal
+			</label>
+			<label for="search_lang_deu" class="radio">
+			    <input type="radio" name="language" id="search_lang_deu" checked="checked" value="deu" />
+			    Deutsch
+			</label>
+			<label for="search_lang_eng" class="radio">
+			    <input type="radio" name="language" id="search_lang_eng" value="eng" />
+			    Englisch
+			</label>
+		    </div>
+		    <div id="trash">
+			<label for="search_trash">Trashfilter</label>
+			<label for="search_tash_yes" class="radio">
+			    <input type="radio" name="trash" id="search_trash_yes" checked="checked" value="yes" />
+			    Aus
+			</label>
+			<label for="search_trash_no" class="radio">
+			    <input type="radio" name="trash" id="search_trash_no" value="no" />
+			    Ein
+			</label>
 		    </div>
 		</div>
 
